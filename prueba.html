@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reseñas de Huéspedes</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos generales del cuerpo y el contenedor principal */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-top: 30px;
+        }
+        .section-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #1a202c; /* gray-900 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: center;
+        }
+
+        /* Estilos para las tarjetas de comentarios */
+        .comment-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+        }
+        .comment-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* gray-200 */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease-in-out, opacity 0.5s ease-in;
+            opacity: 0; /* Hidden by default for animation */
+            transform: translateY(20px); /* Move down for animation */
+        }
+        .comment-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .guest-name {
+            font-weight: 600; /* font-semibold */
+            color: #2d3748; /* gray-800 */
+        }
+        .stay-date {
+            font-size: 0.875rem; /* text-sm */
+            color: #718096; /* gray-600 */
+        }
+        .star-rating-display {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 8px;
+        }
+        .star-rating-display svg {
+            width: 18px;
+            height: 18px;
+            fill: #f6e05e; /* yellow-400 */
+        }
+        .comment-text-display {
+            font-size: 0.95rem;
+            color: #4a5568; /* gray-700 */
+            line-height: 1.5;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Limit to 3 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .comment-tags-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .tag-chip {
+            display: flex;
+            align-items: center;
+            background-color: #ebf8ff; /* blue-50 */
+            color: #2b6cb0; /* blue-700 */
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .tag-chip svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+        }
+
+        /* Botón "Ver más opiniones" */
+        .load-more-button {
+            display: block;
+            margin: 30px auto 0;
+            background-color: #4299e1; /* blue-500 */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .load-more-button:hover {
+            background-color: #3182ce; /* blue-600 */
+            transform: translateY(-1px);
+        }
+        .load-more-button:active {
+            transform: translateY(0);
+        }
+
+        /* Sección para dejar una nueva reseña */
+        .review-form-section {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid #e2e8f0; /* gray-200 */
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568; /* gray-700 */
+        }
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e0; /* gray-300 */
+            border-radius: 6px;
+            font-size: 1em;
+            color: #2d3748; /* gray-800 */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #63b3ed; /* blue-400 */
+            box-shadow: 0 0 0 0.2rem rgba(66, 153, 225, 0.25); /* blue-500 with opacity */
+        }
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* Estrellas seleccionables en el formulario */
+        .star-rating-input {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .star-rating-input svg {
+            width: 28px;
+            height: 28px;
+            fill: #cbd5e0; /* gray-300 for empty */
+            cursor: pointer;
+            transition: fill 0.2s ease;
+        }
+        .star-rating-input svg.filled {
+            fill: #f6e05e; /* yellow-400 for filled */
+        }
+
+        /* Selección de tags en el formulario */
+        .tag-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag-checkbox-group label {
+            display: flex;
+            align-items: center;
+            background-color: #edf2f7; /* gray-100 */
+            color: #4a5568; /* gray-700 */
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-weight: 500;
+        }
+        .tag-checkbox-group input[type="checkbox"] {
+            display: none; /* Hide default checkbox */
+        }
+        .tag-checkbox-group input[type="checkbox"]:checked + label {
+            background-color: #4299e1; /* blue-500 */
+            color: white;
+        }
+        .tag-checkbox-group label svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            fill: currentColor; /* Inherit color from parent */
+        }
+
+        .submit-review-button {
+            background-color: #38a169; /* green-600 */
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .submit-review-button:hover {
+            background-color: #2f855a; /* green-700 */
+            transform: translateY(-1px);
+        }
+        .submit-review-button:active {
+            transform: translateY(0);
+        }
+
+        .message-box {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="section-title">Lo que nuestros huéspedes destacan</h1>
+        <p class="text-gray-600 mb-8 text-center">Lee las experiencias de quienes ya nos han visitado.</p>
+
+        <div id="seccion-comentarios">
+            <p class="text-gray-500 text-center" id="no-comments-message" style="display: none;">Aún no hay reseñas. ¡Sé el primero en dejar una!</p>
+            <div id="lista-comentarios" class="comment-grid">
+                </div>
+            <button id="load-more-button" class="load-more-button" style="display: none;">Ver más opiniones</button>
+        </div>
+
+        <div id="message-box" class="message-box"></div>
+
+        <div class="review-form-section">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-5 text-center">Deja tu Reseña</h2>
+            <form id="review-form" class="space-y-6">
+                <div>
+                    <label for="review-nombre" class="form-label">Tu Nombre:</label>
+                    <input type="text" id="review-nombre" name="nombre" class="form-input" required>
+                </div>
+                <div>
+                    <label for="review-fecha-estadia" class="form-label">Fecha de Estadía:</label>
+                    <input type="month" id="review-fecha-estadia" name="fecha-estadia" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Valoración:</label>
+                    <div id="star-rating-input" class="star-rating-input">
+                        <svg class="star-icon" data-value="1" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <svg class="star-icon" data-value="2" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <svg class="star-icon" data-value="3" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <svg class="star-icon" data-value="4" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <svg class="star-icon" data-value="5" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
+                <div>
+                    <label for="review-texto" class="form-label">Tu Reseña:</label>
+                    <textarea id="review-texto" name="reseña" class="form-textarea" required></textarea>
+                </div>
+                <div>
+                    <label class="form-label">Puntos Fuertes:</label>
+                    <div class="tag-checkbox-group">
+                        <input type="checkbox" id="tag-limpieza" name="tags" value="Limpieza">
+                        <label for="tag-limpieza">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Limpieza
+                        </label>
+                        <input type="checkbox" id="tag-ubicacion" name="tags" value="Ubicación">
+                        <label for="tag-ubicacion">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            Ubicación
+                        </label>
+                        <input type="checkbox" id="tag-comodidad" name="tags" value="Comodidad">
+                        <label for="tag-comodidad">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3 3 3 0 0 0 3-3V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                            Comodidad
+                        </label>
+                        <input type="checkbox" id="tag-acceso" name="tags" value="Acceso">
+                        <label for="tag-acceso">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-3 3a5 5 0 0 0-1.54 3.54z"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l3-3a5 5 0 0 0 1.54-3.54z"></path></svg>
+                            Acceso
+                        </label>
+                        <input type="checkbox" id="tag-atencion" name="tags" value="Atención">
+                        <label for="tag-atencion">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            Atención
+                        </label>
+                        <input type="checkbox" id="tag-wifi" name="tags" value="Wifi">
+                        <label for="tag-wifi">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                            Wifi
+                        </label>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="submit-review-button">Enviar Reseña</button>
+                </div>
+            </form>
+        </div>
+
+        <p class="text-center text-gray-600 mt-12 mb-4">
+            Si prefieres usar un formulario externo para otro tipo de consulta:
+        </p>
+        <div class="text-center">
+            <a href="URL_DEL_FORMULARIO_EXTERNO_AQUI" target="_blank" class="load-more-button">
+                Ir a Formulario Externo
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        // Datos de ejemplo para comentarios iniciales (puedes borrar esto en producción)
+        const initialComments = [
+            {
+                nombre: "Ana García",
+                fecha: "2025-04-20T10:00:00Z",
+                fechaEstadia: "2025-04",
+                valoracion: 5,
+                texto: "¡Una estancia maravillosa! La limpieza impecable y la ubicación perfecta para explorar la ciudad. Definitivamente volveremos.",
+                tags: ["Limpieza", "Ubicación", "Comodidad"]
+            },
+            {
+                nombre: "Carlos López",
+                fecha: "2025-03-15T14:30:00Z",
+                fechaEstadia: "2025-03",
+                valoracion: 4,
+                texto: "Muy buena atención por parte del personal. El acceso es fácil y el WiFi funciona de maravilla. La comodidad de las camas es destacable.",
+                tags: ["Atención", "Acceso", "Wifi", "Comodidad"]
+            },
+            {
+                nombre: "Sofía Martínez",
+                fecha: "2025-02-28T09:00:00Z",
+                fechaEstadia: "2025-02",
+                valoracion: 5,
+                texto: "Todo fue excelente. La limpieza es de 10 y la ubicación inmejorable. Nos sentimos como en casa, muy cómodo.",
+                tags: ["Limpieza", "Ubicación", "Comodidad"]
+            },
+            {
+                nombre: "Javier Ruiz",
+                fecha: "2025-01-10T11:00:00Z",
+                fechaEstadia: "2025-01",
+                valoracion: 4,
+                texto: "El alojamiento es muy acogedor. La atención fue rápida y el WiFi muy estable. Un lugar recomendable para descansar.",
+                tags: ["Atención", "Wifi", "Comodidad"]
+            },
+            {
+                nombre: "Laura Fernández",
+                fecha: "2024-12-05T16:00:00Z",
+                fechaEstadia: "2024-12",
+                valoracion: 5,
+                texto: "Increíble experiencia. La ubicación es céntrica y el acceso muy conveniente. La limpieza es impecable en todas las áreas.",
+                tags: ["Ubicación", "Acceso", "Limpieza"]
+            }
+        ];
+
+        // Inicializar comentarios en localStorage si no existen
+        if (!localStorage.getItem('comentariosPagina')) {
+            localStorage.setItem('comentariosPagina', JSON.stringify(initialComments));
+        }
+
+        const COMMENTS_PER_LOAD = 3; // Cuántos comentarios cargar cada vez
+        let commentsDisplayed = 0; // Contador de comentarios mostrados
+
+        // Función para mostrar mensajes al usuario
+        function showMessage(message, type = 'info') {
+            const msgBox = document.getElementById('message-box');
+            msgBox.textContent = message;
+            msgBox.className = 'message-box'; // Reinicia las clases
+            if (type === 'success') {
+                msgBox.classList.add('bg-green-100', 'text-green-800', 'border-green-400');
+            } else if (type === 'error') {
+                msgBox.classList.add('bg-red-100', 'text-red-800', 'border-red-400');
+            } else { // info
+                msgBox.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-400');
+            }
+            msgBox.style.display = 'block';
+            setTimeout(() => {
+                msgBox.style.display = 'none';
+            }, 5000); // Oculta el mensaje después de 5 segundos
+        }
+
+        // Helper para obtener el SVG de estrella
+        function getStarSVG(filled) {
+            const color = filled ? '#f6e05e' : '#cbd5e0'; // yellow-400 vs gray-300
+            return `<svg viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+        }
+
+        // Helper para obtener el SVG del tag
+        function getTagSVG(tag) {
+            const icons = {
+                "Limpieza": `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+                "Ubicación": `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`,
+                "Comodidad": `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3 3 3 0 0 0 3-3V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`,
+                "Acceso": `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-3 3a5 5 0 0 0-1.54 3.54z"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l3-3a5 5 0 0 0 1.54-3.54z"></path></svg>`,
+                "Atención": `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
+                "Wifi": `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>`
+            };
+            return icons[tag] || ''; // Return empty string if tag not found
+        }
+
+        // Función para cargar los comentarios desde localStorage
+        function cargarComentarios(append = false) {
+            const comentariosGuardados = JSON.parse(localStorage.getItem('comentariosPagina')) || [];
+            // Ordenar comentarios por fecha, los más recientes primero
+            comentariosGuardados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            const listaComentariosDiv = document.getElementById('lista-comentarios');
+            const noCommentsMessage = document.getElementById('no-comments-message');
+            const loadMoreButton = document.getElementById('load-more-button');
+
+            if (!append) {
+                listaComentariosDiv.innerHTML = ''; // Limpiar si no estamos añadiendo
+                commentsDisplayed = 0; // Reset counter if not appending
+            }
+
+            if (comentariosGuardados.length === 0) {
+                noCommentsMessage.style.display = 'block';
+                loadMoreButton.style.display = 'none';
+                return;
+            } else {
+                noCommentsMessage.style.display = 'none';
+            }
+
+            const startIndex = commentsDisplayed;
+            const endIndex = Math.min(comentariosGuardados.length, commentsDisplayed + COMMENTS_PER_LOAD);
+
+            for (let i = startIndex; i < endIndex; i++) {
+                const comentario = comentariosGuardados[i];
+                const commentCard = document.createElement('div');
+                commentCard.classList.add('comment-card');
+
+                // Formatear fecha de estadía (Mes Año)
+                const dateParts = comentario.fechaEstadia.split('-'); //YYYY-MM
+                const year = dateParts[0];
+                const monthIndex = parseInt(dateParts[1]) - 1; // 0-indexed month
+                const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                const formattedDate = `${monthNames[monthIndex]} ${year}`;
+
+                // Generar estrellas
+                let starsHtml = '';
+                for (let s = 1; s <= 5; s++) {
+                    starsHtml += getStarSVG(s <= comentario.valoracion);
+                }
+
+                // Generar tags
+                let tagsHtml = '';
+                if (comentario.tags && comentario.tags.length > 0) {
+                    comentario.tags.forEach(tag => {
+                        tagsHtml += `
+                            <span class="tag-chip">
+                                ${getTagSVG(tag)}
+                                ${tag}
+                            </span>
+                        `;
+                    });
+                }
+
+                commentCard.innerHTML = `
+                    <div class="comment-header">
+                        <span class="guest-name">${comentario.nombre}</span>
+                        <span class="stay-date">${formattedDate}</span>
+                    </div>
+                    <div class="star-rating-display">
+                        ${starsHtml}
+                    </div>
+                    <p class="comment-text-display">${comentario.texto}</p>
+                    <div class="comment-tags-display">
+                        ${tagsHtml}
+                    </div>
+                `;
+                listaComentariosDiv.appendChild(commentCard);
+
+                // Trigger animation
+                setTimeout(() => {
+                    commentCard.classList.add('show');
+                }, 50 * (i - startIndex)); // Stagger animation
+            }
+
+            commentsDisplayed = endIndex;
+
+            // Mostrar/ocultar botón "Ver más"
+            if (commentsDisplayed < comentariosGuardados.length) {
+                loadMoreButton.style.display = 'block';
+            } else {
+                loadMoreButton.style.display = 'none';
+            }
+        }
+
+        // Lógica para el botón "Ver más opiniones"
+        document.getElementById('load-more-button').addEventListener('click', () => {
+            cargarComentarios(true); // Cargar más comentarios, añadiéndolos
+        });
+
+        // Lógica para el formulario de nueva reseña
+        let currentRating = 0; // Para almacenar la valoración seleccionada
+
+        // Manejar la selección de estrellas
+        document.querySelectorAll('.star-icon').forEach(star => {
+            star.addEventListener('click', function() {
+                currentRating = parseInt(this.dataset.value);
+                document.querySelectorAll('.star-icon').forEach(s => {
+                    if (parseInt(s.dataset.value) <= currentRating) {
+                        s.classList.add('filled');
+                    } else {
+                        s.classList.remove('filled');
+                    }
+                });
+            });
+            // Hover effect
+            star.addEventListener('mouseover', function() {
+                document.querySelectorAll('.star-icon').forEach(s => {
+                    if (parseInt(s.dataset.value) <= parseInt(this.dataset.value)) {
+                        s.style.fill = '#fcd34d'; // yellow-300 on hover
+                    }
+                });
+            });
+            star.addEventListener('mouseout', function() {
+                document.querySelectorAll('.star-icon').forEach(s => {
+                    if (!s.classList.contains('filled')) {
+                        s.style.fill = '#cbd5e0'; // Reset to gray if not filled
+                    } else {
+                        s.style.fill = '#f6e05e'; // Keep yellow if filled
+                    }
+                });
+            });
+        });
+
+
+        // Event Listener para el envío del formulario de reseña
+        document.getElementById('review-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Evitar que el formulario se envíe de forma tradicional
+
+            const nombreInput = document.getElementById('review-nombre');
+            const fechaEstadiaInput = document.getElementById('review-fecha-estadia');
+            const reviewTextoInput = document.getElementById('review-texto');
+            const selectedTags = Array.from(document.querySelectorAll('.tag-checkbox-group input[type="checkbox"]:checked'))
+                                     .map(checkbox => checkbox.value);
+
+            const nombre = nombreInput.value.trim();
+            const fechaEstadia = fechaEstadiaInput.value; //YYYY-MM
+            const texto = reviewTextoInput.value.trim();
+            const valoracion = currentRating;
+
+            if (nombre && fechaEstadia && texto && valoracion > 0) {
+                const comentariosGuardados = JSON.parse(localStorage.getItem('comentariosPagina')) || [];
+                const nuevaReseña = {
+                    nombre: nombre,
+                    fecha: new Date().toISOString(), // Fecha actual de la reseña
+                    fechaEstadia: fechaEstadia,
+                    valoracion: valoracion,
+                    texto: texto,
+                    tags: selectedTags
+                };
+                comentariosGuardados.push(nuevaReseña);
+                localStorage.setItem('comentariosPagina', JSON.stringify(comentariosGuardados));
+
+                // Resetear formulario
+                nombreInput.value = '';
+                fechaEstadiaInput.value = '';
+                reviewTextoInput.value = '';
+                currentRating = 0;
+                document.querySelectorAll('.star-icon').forEach(s => s.classList.remove('filled'));
+                document.querySelectorAll('.tag-checkbox-group input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                cargarComentarios(); // Recargar la lista para mostrar la nueva reseña
+                showMessage('¡Gracias por tu reseña! Se ha guardado localmente.', 'success');
+            } else {
+                showMessage('Por favor, completa todos los campos y selecciona una valoración.', 'error');
+            }
+        });
+
+        // Cargar los comentarios al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarComentarios(); // Carga los primeros 3 comentarios al inicio
+        });
+    </script>
+</body>
+</html>
